@@ -54,21 +54,21 @@ def get_map(string):
     sources = []
     for sublist in trios_ext:
         des_start = int(sublist[0])
-        des_end = int(sublist[0])+int(sublist[2])
-        destinations.extend(range(des_start, des_end))
+        destinations.append(des_start)
         sou_start = int(sublist[1])
         sou_end = int(sublist[1])+int(sublist[2])
-        sources.extend(range(sou_start, sou_end)) 
+        sources.append((sou_start, sou_end)) 
     return map_name, destinations, sources
 
 def follow_map(source, sour_list, dest_list):
-    if source in sour_list:
-        index = sour_list.index(source)
-        return dest_list[index]
-    else:
+    found = False
+    for index, (lower, upper) in enumerate(sour_list):
+        if lower <= source <= upper:
+            found = True
+            diff = int(source) - int(lower)
+            return int(dest_list[index]) + diff
+    if not found:
         return source
-    
-
 
 input_str = real_str
 
