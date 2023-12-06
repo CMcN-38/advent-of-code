@@ -1,5 +1,6 @@
 from utils.api import get_input
 import re
+import itertools
 
 real_str = get_input(5)
 
@@ -70,7 +71,38 @@ def follow_map(source, sour_list, dest_list):
     if not found:
         return source
 
-input_str = real_str
+def follow_all_maps(seeds):
+    min_loc = 9999999999999
+
+    #all_soils = []
+    #all_ferts = []
+    #all_waters = []
+    #all_lights = []
+    #all_temps = []
+    #all_humids = []
+    #all_locs = []
+
+    for s in seeds:
+        soil = follow_map(s, map_1_sour, map_1_dest)
+        
+        fert = follow_map(soil, map_2_sour, map_2_dest)
+
+        water = follow_map(fert, map_3_sour, map_3_dest)
+
+        light = follow_map(water, map_4_sour, map_4_dest)
+
+        temp = follow_map(light, map_5_sour, map_5_dest)
+
+        humid = follow_map(temp, map_6_sour, map_6_dest)
+    
+        loc = follow_map(humid, map_7_sour, map_7_dest)
+        if loc < min_loc:
+            min_loc = loc
+        else:
+            continue
+    return min_loc
+
+input_str = test_str
 
 seeds = input_str.split('\n')[0]
 seeds = [int(s) for s in seeds.split() if s.isdigit()]
@@ -93,26 +125,31 @@ all_temps = []
 all_humids = []
 all_locs = []
 
-for s in seeds:
-    soil = follow_map(s, map_1_sour, map_1_dest)
-    all_soils.append(soil)
+result = follow_all_maps(seeds)
+print(f'Part 1: {result}')
 
-    fert = follow_map(soil, map_2_sour, map_2_dest)
-    all_ferts.append(fert)
+## Part 2:
 
-    water = follow_map(fert, map_3_sour, map_3_dest)
-    all_waters.append(water)
+input_str = real_str
 
-    light = follow_map(water, map_4_sour, map_4_dest)
-    all_lights.append(light)
+seeds = input_str.split('\n')[0]
+seeds = [int(s) for s in seeds.split() if s.isdigit()]
 
-    temp = follow_map(light, map_5_sour, map_5_dest)
-    all_temps.append(temp)
+new_seeds = [(seeds[i], seeds[i + 1]) for i in range(0, len(seeds) - 1, 2)]
 
-    humid = follow_map(temp, map_6_sour, map_6_dest)
-    all_humids.append(humid)
-    
-    loc = follow_map(humid, map_7_sour, map_7_dest)
-    all_locs.append(loc)
+def generate_expanded_numbers(list):
+    for start, length in list:
+        yield from range(start, start + length)
 
-print(f'Part 1: {min(all_locs)}')
+expanded_seeds = generate_expanded_numbers(new_seeds)
+
+chunk_size = 100
+
+while True:
+    chunk = list(itertools.islice(expanded_seeds, chunk_size))
+    if not chunk:
+        break
+    result_2 = follow_all_maps(chunk) 
+        
+print(f'Part 2: {result_2}')
+
