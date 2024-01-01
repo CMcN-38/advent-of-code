@@ -23,19 +23,12 @@ test_str = '''#.##..##.
 run_str = input_str
 
 # WRITE YOUR SOLUTION HERE
-
+# The following is my code, it works on the test input but not on the real input
 def parse_input(string):
     output = []
-    pattern = []
-    for i, line in enumerate(string.splitlines()):
-        if i == len(string.splitlines())-1:
-            pattern.append(line)
-            output.append(pattern)
-        if line != '':
-            pattern.append(line)
-        else:
-            output.append(pattern)
-            pattern = []
+
+    for pattern in string.split("\n\n"):
+        output.append(pattern.splitlines())
 
     return(output)
 
@@ -95,4 +88,58 @@ for i, pattern in enumerate(patterns):
     total += cols_res
 
 
-print(total)
+print(f'Part 1 Answer: {total}')
+
+# The following is using a guide from HyperNeutrino
+
+def find_mirror(grid):
+    for r in range(1, len(grid)):
+        above = grid[:r][::-1]
+        below = grid[r:]
+
+        above = above[:len(below)]
+        below = below[:len(above)]
+
+        if above == below:
+            return r
+
+    return 0
+
+total = 0
+
+for pattern in parse_input(run_str):
+    row = find_mirror(pattern)
+    total += row * 100
+
+    new_pattern = transpose_pattern(pattern)
+    col = find_mirror(new_pattern)
+    total += col
+
+print(f'Part 1 Answer using guide: {total}')
+
+
+# Part 2
+
+def find_mirror(grid):
+    for r in range(1, len(grid)):
+        above = grid[:r][::-1]
+        below = grid[r:]
+
+        if sum(sum(0 if a == b else 1 for a, b in zip(x, y)) for x, y in zip(above, below)) == 1:
+            return r
+
+    return 0
+
+total = 0
+
+for pattern in parse_input(run_str):
+    row = find_mirror(pattern)
+    total += row * 100
+
+    new_pattern = transpose_pattern(pattern)
+    col = find_mirror(new_pattern)
+    total += col
+
+print(f'Part 2 Answer using guide: {total}')
+
+
