@@ -6,13 +6,13 @@ pub fn part_one(input: &str) -> Option<u32> {
     let mut total = 0;
 
     for line in input.lines() {
-        for captures in
-        if let Some(captures) = re.captures(line) {
-            let num1: i32 = captures[1].parse().unwrap();
-            let num2: i32 = captures[2].parse().unwrap();
-            println!("{}", num1);
-            println!("{}", num2);
-            total += num1 * num2;
+        for captures in re.captures_iter(line) {
+                let num1: i32 = captures[1].parse().unwrap();
+                let num2: i32 = captures[2].parse().unwrap();
+                println!("{}", num1);
+                println!("{}", num2);
+                total += num1 * num2;
+            }
         }
     }
 
