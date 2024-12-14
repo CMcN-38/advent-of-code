@@ -5,12 +5,12 @@ pub fn explode_input(input: &str) -> Vec<String> {
 
     for (idx, charac) in input.trim().chars().enumerate() {
         if idx % 2 == 0 {
-            for _i in 0..(charac.to_digit(10).expect("Not Valid Number") as i32) {
+            for _i in 0..(charac.to_digit(10).expect("Not Valid Number") as isize) {
                 let new_idx = (idx + 1) /2;
                 exploded.push(new_idx.to_string());
             }
         } else {
-            for _i in 0..(charac.to_digit(10).expect("Not Valid Number") as i32) {
+            for _i in 0..(charac.to_digit(10).expect("Not Valid Number") as isize) {
                 exploded.push(".".to_string())
             }
         }
@@ -44,7 +44,7 @@ fn order_disk(vec: &mut Vec<String>) {
         }
     }
 }
-fn rearrange_vector(mut vec: Vec<char>) -> Vec<char> {
+fn rearrange_vector(mut vec: Vec<char>) -> Vec<String> {
     // Helper function to find the next block of dots large enough to fit a given size.
     fn find_first_dot_block(vec: &[char], size: usize) -> Option<usize> {
         let mut count = 0;
@@ -66,12 +66,13 @@ fn rearrange_vector(mut vec: Vec<char>) -> Vec<char> {
         }
         None
     }
-    let mut seen: Vec<char> = Vec::new();
+    // let mut seen: Vec<char> = Vec::new();
     let mut i = vec.len() - 1;
     while i > 0 {
         // Identify the current block of numbers.
-        if vec[i].is_digit(10) && !seen.contains(&vec[*&i]) {
-            seen.push(vec[i]);
+        // if vec[i].is_digit(10) && !seen.contains(&vec[*&i]) {
+        if vec[i].is_digit(10) {
+            // seen.push(vec[i]);
             let end = i;
             while i > 0 && vec[i - 1].is_digit(10) && vec[i-1] == vec[i]{
                 i -= 1;
@@ -83,68 +84,59 @@ fn rearrange_vector(mut vec: Vec<char>) -> Vec<char> {
             // Find the first block of dots that can fit this block of numbers.
             if let Some(dot_start) = find_first_dot_block(&vec, block_size) {
                 // Move the block of numbers to the dots' position.
-                for j in 0..block_size {
-                    vec[dot_start + j] = block[j];
-                }
+                if dot_start < i {
+                    for j in 0..block_size {
+                        vec[dot_start + j] = block[j];
+                    }
                 // Replace the original position of the block with dots.
-                for j in start..=end {
-                    vec[j] = '.';
+                    for j in start..=end {
+                        vec[j] = '.';
+                    }
                 }
             }
 
-            println!("{:?}", vec);
+            // println!("{:?}", vec);
         }
-        i -= 1;
+        if i > 0 {
+            i -= 1;
+        } else {
+            break;
+        }
     }
 
-    vec
+    let output: Vec<String> = vec.iter().map(|&c| c.to_string()).collect();
+
+    output
 }
 
 
-fn calc_checksum(vec: Vec<String>) -> u64 {
+fn calc_checksum(vec: Vec<String>) -> usize {
     let mut total = 0;
 
     for (idx, i) in vec.iter().enumerate() {
-        if *i == '.'.to_string() {
-            continue;
-        } else {
-            let number: i64 = i.parse().expect("Not Valid digit");
-            total += number * (idx as i64);
+        if *i != '.'.to_string() {
+            let number: isize = i.parse().expect("Not Valid digit");
+            total += number * (idx as isize);
         }
     }
 
-    total as u64
+    total as usize
 }
 
-fn calc_checksum_new(vec: Vec<char>) -> u64 {
-    let mut total = 0;
-
-    for (idx, i) in vec.iter().enumerate() {
-        if *i == '.' {
-            continue;
-        } else {
-            let number = i.to_digit(10).expect("None") ;
-            total += (number as i64) * (idx as i64);
-        }
-    }
-
-    total as u64
-}
-
-pub fn part_one(input: &str) -> Option<u64> {
+pub fn part_one(input: &str) -> Option<usize> {
     let mut exploded = explode_input(input);
     order_disk(&mut exploded);
 
-    Some(calc_checksum(exploded) as u64)
+    Some(calc_checksum(exploded) as usize)
 }
 
-pub fn part_two(input: &str) -> Option<u64> {
-    let mut exploded = explode_input(input);
+pub fn part_two(input: &str) -> Option<usize> {
+    let exploded = explode_input(input);
     let parsed_exploded = parse_vec(exploded);
     let ordered = rearrange_vector(parsed_exploded);
 
     println!("{:?}", ordered);
-    Some(calc_checksum_new(ordered) as u64)
+    Some(calc_checksum(ordered) as usize)
 }
 
 #[cfg(test)]
