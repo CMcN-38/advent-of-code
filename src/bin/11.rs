@@ -59,13 +59,18 @@ pub fn part_two(input: &str) -> Option<usize> {
     let num = 75;
 
     let mut stones = parse_input(input);
+    let mut total = 0;
 
-    for _i in 0..num {
-        stones = blink_func(stones);
-        // println!("{:?}", stones);
+    for i in 0..stones.len(){
+        let mut stone: Vec<String> = Vec::new();
+        stone.push(stones[i].clone());
+        for _j in 0..num {
+            stones = blink_func(stones);
+            // println!("{:?}", stones);
+        }
+
+        total += stones.len();
     }
-
-    let total = stones.len();
 
     Some(total as usize)
 }
