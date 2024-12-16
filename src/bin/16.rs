@@ -1,9 +1,9 @@
-use std::collections::{HashSet, BinaryHeap};
+use std::collections::{HashMap, HashSet, BinaryHeap};
+use std::cmp::Reverse;
 advent_of_code::solution!(16);
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct State{
-    x: usize,
+struct State{ x: usize,
     y: usize,
     direction: (isize, isize),
     cost: usize,
@@ -119,70 +119,94 @@ fn best_score(grid: Vec<Vec<char>>, start: (usize, usize), end: (usize, usize)) 
     None
 }
 
-fn track_spaces(grid: Vec<Vec<char>>, start: (usize, usize), end: (usize, usize)) -> usize {
-    let best_score = best_score(grid.clone(), start, end);
+fn dijkstra_unique_spaces(grid: Vec<Vec<char>>, sx: usize, sy: usize, ex: usize, ey: usize) -> usize {
+    let n = grid.len();
+    let m = grid[0].len();
 
+    // Directions: (dx, dy)
+    let directions: [(isize, isize); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
+
+    // Distance and predecessor maps
+    let mut dist: HashMap<(usize, usize, isize, isize), usize> = HashMap::new();
+    let mut prev: HashMap<(usize, usize, isize, isize), Vec<(usize, usize, isize, isize)>> = HashMap::new();
+
+    // Initialize priority queue
     let mut heap = BinaryHeap::new();
-    let mut best_paths: Vec<HashSet<(usize, usize)>> = Vec::new();
 
-    for &direction in &DIRECTIONS {
-        heap.push(State2 {
-            x: start.0,
-            y: start.1,
-            direction,
-            cost:1000,
-            path: HashSet::from([start]),
-        });
-    }
+    // Start state
+    dist.insert((sx, sy, 0, 1), 0);
+    heap.push(Reverse((0, (sx, sy, 0, 1))));
 
-    while let Some(current) = heap.pop() {
-        if current.cost > best_score.expect("."){
+    while let Some(Reverse((d, (px, py, dx, dy)))) = heap.pop() {
+        // Explore turning left and right
+        for &(ndx, ndy) in &[(-dy, dx), (dy, -dx)] {
+            let new_state = (px, py, ndx, ndy);
+            if *dist.get(&new_state).unwrap_or(&usize::MAX) == d + 1000 {
+                prev.entry(new_state).or_default().push((px, py, dx, dy));
+            }
+            if *dist.get(&new_state).unwrap_or(&usize::MAX) > d + 1000 {
+                dist.insert(new_state, d + 1000);
+                prev.insert(new_state, vec![(px, py, dx, dy)]);
+                heap.push(Reverse((d + 1000, new_state)));
+            }
+        }
+
+        // Move forward
+        let npx = px as isize + dx;
+        let npy = py as isize + dy;
+
+        if npx < 0 || npx >= n as isize || npy < 0 || npy >= m as isize || grid[npx as usize][npy as usize] == '#' {
             continue;
         }
 
-        if (current.x, current.y) == end && current.cost == best_score.expect("."){
-            best_paths.push(current.path.clone());
+        let new_state = (npx as usize, npy as usize, dx, dy);
+        if *dist.get(&new_state).unwrap_or(&usize::MAX) == d + 1 {
+            prev.entry(new_state).or_default().push((px, py, dx, dy));
         }
+        if *dist.get(&new_state).unwrap_or(&usize::MAX) > d + 1 {
+            dist.insert(new_state, d + 1);
+            prev.insert(new_state, vec![(px, py, dx, dy)]);
+            heap.push(Reverse((d + 1, new_state)));
+        }
+    }
 
-        for &next_direction in &DIRECTIONS {
-            let new_x = current.x as isize + next_direction.0;
-            let new_y = current.y as isize + next_direction.1;
+    // Find the best distance to the target
+    let mut best_dist = usize::MAX;
+    let mut end_states = Vec::new();
 
-            if new_x >= 0
-                && new_x < grid.len() as isize
-                && new_y >= 0
-                && new_y < grid[0].len() as isize
-                && grid[new_x as usize][new_y as usize] != '#'
-            {
-                let new_position = (new_x as usize, new_y as usize);
-                if !current.path.contains(&new_position) {
-                    let mut new_path = current.path.clone();
-                    new_path.insert(new_position);
-
-                    let mut new_cost = current.cost + 1;
-                    if current.direction != next_direction {
-                        new_cost += 1000;
-                    }
-
-                    heap.push(State2 {
-                        x: new_x as usize,
-                        y: new_y as usize,
-                        direction: next_direction,
-                        cost: new_cost,
-                        path: new_path,
-                    });
-                }
+    for &(dx, dy) in &directions {
+        if let Some(&cost) = dist.get(&(ex, ey, dx, dy)) {
+            if cost < best_dist {
+                best_dist = cost;
+                end_states.clear();
+                end_states.push((ex, ey, dx, dy));
+            } else if cost == best_dist {
+                end_states.push((ex, ey, dx, dy));
             }
         }
     }
 
-    let mut unique_spaces = HashSet::new();
-    for path in best_paths {
-        unique_spaces.extend(path);
+    // Backtrack to find all unique spaces visited
+    let mut visited_spaces = HashSet::new();
+    let mut stack = Vec::new();
+
+    for end_state in end_states {
+        stack.push(end_state);
     }
 
-    unique_spaces.len()
+    while let Some(state) = stack.pop() {
+        let (x, y, dx, dy) = state;
+        visited_spaces.insert((x, y));
+        if let Some(parents) = prev.get(&state) {
+            for &parent in parents {
+                stack.push(parent);
+            }
+        }
+    }
+
+    visited_spaces.len()
 }
+
 
 pub fn part_one(input: &str) -> Option<usize> {
     let grid = parse_input(input);
@@ -199,8 +223,11 @@ pub fn part_two(input: &str) -> Option<u32> {
     let start = find_location(grid.clone(), 'S');
     let end = find_location(grid.clone(), 'E');
 
-    let total = track_spaces(grid, start?, end?);
-    Some(total as u32)
+
+    let unique_spaces = dijkstra_unique_spaces(grid, start?.0, start?.1, end?.0, end?.1);
+
+
+    Some(unique_spaces as u32)
 }
 
 #[cfg(test)]
