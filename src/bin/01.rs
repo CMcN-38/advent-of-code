@@ -1,68 +1,109 @@
-use std::collections::HashMap;
-
 advent_of_code::solution!(1);
 
-pub fn part_one(input: &str) -> Option<i32> {
-        let mut list1 = Vec::new();
-        let mut list2 = Vec::new();
+fn parse_input(input: &str) -> Vec<i32> {
+    let mut parsed_output = Vec::new();
 
-        //Create the lists
-        for line in input.lines() {
-            let parts: Vec<&str> = line.split_whitespace().collect();
+    for line in input.lines() {
+        let direction = line.chars().next().unwrap();
+        let mut number: i32 = line[1..].trim().parse().unwrap();
 
-            if let (Ok(num1), Ok(num2)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
-                list1.push(num1);
-                list2.push(num2);
-            }
+
+        if direction == 'L' {
+            parsed_output.push(-number);
+        } else {
+            parsed_output.push(number);
         }
+    }
 
-        //sort the lists
-        list1.sort();
-        list2.sort();
-
-        let mut total = 0;
-
-        //Add the absolute difference between each pair to the total
-        for i in 0..list1.len() {
-            total += (list1[i] - list2[i]).abs();
-        }
-
-    Some(total)
+    return parsed_output
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
-        let mut list1 = Vec::new();
-        let mut list2 = Vec::new();
 
-        //Create the lists
-        for line in input.lines() {
-            let parts: Vec<&str> = line.split_whitespace().collect();
+pub fn part_one(input: &str) -> Option<u32> {
+    let start = 50;
+    let mut counter = 0;
+    let instructions = parse_input(input);
 
-            if let (Ok(num1), Ok(num2)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
-                list1.push(num1);
-                list2.push(num2);
-            }
+    // println!("{}", start);
+    // println!("{:?}", instructions);
+
+    let mut loc = start;
+
+    for instruct in instructions {
+        let mut num = instruct;
+
+        while num > 100 {
+            num -= 100;
+        }
+        while num < -100 {
+            num += 100;
         }
 
-        //sort the lists
-        list1.sort();
-        list2.sort();
+        loc += num;
 
-        let mut counts = HashMap::new();
-        for &num in &list2 {
-            *counts.entry(num).or_insert(0) += 1;
+        if loc > 99 {
+            loc -= 100;
+        } else if loc < 0 {
+            loc += 100;
         }
 
-        let mut total: u32 = 0;
+        if loc == 0 {
+            counter += 1;
+        }
+    }
 
-        for &num in &list1 {
-            if let Some(&count) = counts.get(&num) {
-                total += num * count;
-            }
+    return Some(counter)
+}
+
+pub fn part_two(input: &str) -> Option<i32> {
+    let start = 50;
+    let mut counter = 0;
+    let instructions = parse_input(input);
+
+    // println!("{}", start);
+    // println!("{:?}", instructions);
+
+    let mut loc = start;
+
+    for instruct in instructions {
+        let mut num = instruct;
+
+        while num > 100 {
+            num -= 100;
+            counter += 1;
+        }
+        while num < -100 {
+            num += 100;
+            counter += 1;
+        }
+
+        if loc == 0 && num < 0 {
+            counter -= 1;
+        }
+
+        loc += num;
+
+        if loc > 100 {
+            loc -= 100;
+            counter += 1;
+        } else if loc == 100 {
+            loc -= 100;
+        } else if loc < 0 {
+            loc += 100;
+            counter += 1;
         }
 
 
-    Some(total)
+        if loc == 0 {
+            counter += 1;
+        }
+        // println!("Turn");
+        // println!("Loc: {}", loc);
+        // println!("Count: {}", counter);
+    }
+
+
+    return Some(counter)
 }
 
 #[cfg(test)]
@@ -72,12 +113,12 @@ mod tests {
     #[test]
     fn test_part_one() {
         let result = part_one(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(11));
+        assert_eq!(result, Some(3));
     }
 
     #[test]
     fn test_part_two() {
         let result = part_two(&advent_of_code::template::read_file("examples", DAY));
-        assert_eq!(result, Some(31));
+        assert_eq!(result, Some(6));
     }
 }
